@@ -83,11 +83,24 @@ function canObjectParry(projectilePosition, objectPosition, projectileVelocity, 
 	local conditions = {
 		(Anticipate and distanceToIntercept <= 75);
 		(distanceToIntercept >= 35 and distanceToIntercept <= 50 and timeToIntercept <= 0.6);
+		(distanceToIntercept >= 25 and distanceToIntercept <= 40 and timeToIntercept <= 0.6);
+		(distanceToIntercept >= 15 and distanceToIntercept <= 30 and timeToIntercept <= 0.5);
+		(distanceToIntercept >= 15 and distanceToIntercept <= 30 and timeToIntercept <= 0.4);
 		(distanceToIntercept >= 50 and distanceToIntercept <= 75 and timeToIntercept >= 0.6 and timeToIntercept <= 0.75);
+		(distanceToIntercept >= 50 and distanceToIntercept <= 75 and timeToIntercept >= 0.5 and timeToIntercept <= 0.70);
+		(distanceToIntercept >= 50 and distanceToIntercept <= 75 and timeToIntercept >= 0.5 and timeToIntercept <= 0.65);
+		(distanceToIntercept >= 50 and distanceToIntercept <= 75 and timeToIntercept >= 0.5 and timeToIntercept <= 0.60);
 		(distanceToIntercept <= 35 and timeToIntercept <= 0.5);
+		(distanceToIntercept <= 35 and timeToIntercept <= 0.4);
+		(distanceToIntercept <= 35 and timeToIntercept <= 0.3);
 		(distanceToIntercept <= 12.5 and timeToIntercept >= 0.5 and timeToIntercept <= 0.75);
+		(distanceToIntercept <= 12.5 and timeToIntercept >= 0.5 and timeToIntercept <= 0.70);
+		(distanceToIntercept <= 12.5 and timeToIntercept >= 0.4 and timeToIntercept <= 0.65);
+		(distanceToIntercept <= 12.5 and timeToIntercept >= 0.4 and timeToIntercept <= 0.60);
 		(distanceToIntercept <= 0.025 and timeToIntercept <= 0.75);
+		(distanceToIntercept <= 0.020 and timeToIntercept <= 0.75);
 		(distanceToIntercept >= 75 and distanceToIntercept <= 100 and timeToIntercept <= 0.5);
+		(distanceToIntercept >= 75 and distanceToIntercept <= 100 and timeToIntercept <= 0.4);
 	}
 	
 	local r
@@ -163,83 +176,5 @@ function Init()
 end
 
 Init()
-
-function canObjectParry(projectilePosition, objectPosition, projectileVelocity, objectVelocity)
-    local timeToIntercept = calculateProjectileTime(projectilePosition, objectPosition, projectileVelocity)
-    local distanceToIntercept = calculateDistance(projectilePosition + projectileVelocity * timeToIntercept, objectPosition + objectVelocity * timeToIntercept)
-    local Anticipate = Anticipate(timeToIntercept)
-
-    -- เพิ่มเงื่อนไขเช็คว่าผู้เล่นเคยตีบอลมาหาคุณในระยะเวลาที่สัมพันธ์
-    local playerNearby = Players:GetPlayers()
-    for _, player in pairs(playerNearby) do
-        if player.Name ~= Local.Name then
-            local playerRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if playerRootPart then
-                local timeToInterceptPlayer = calculateProjectileTime(projectilePosition, playerRootPart.Position, projectileVelocity)
-                if timeToInterceptPlayer < 0.5 then
-                    -- ถ้ามีผู้เล่นในระยะที่เฝ้าดูแล และเวลาที่ตีบอลมาหาคุณน้อยกว่า 0.5 วินาที
-                    return true
-                end
-            end
-        end
-    end
-
-    print("CanParry:", distanceToIntercept, timeToIntercept, Anticipate)
-    local conditions = {
-        (Anticipate and distanceToIntercept <= 75);
-        (distanceToIntercept >= 35 and distanceToIntercept <= 50 and timeToIntercept <= 0.6);
-        (distanceToIntercept >= 50 and distanceToIntercept <= 75 and timeToIntercept >= 0.6 and timeToIntercept <= 0.75);
-        (distanceToIntercept <= 35 and timeToIntercept <= 0.5);
-        (distanceToIntercept <= 12.5 and timeToIntercept >= 0.5 and timeToIntercept <= 0.75);
-        (distanceToIntercept <= 0.025 and timeToIntercept <= 0.75);
-        (distanceToIntercept >= 75 and distanceToIntercept <= 100 and timeToIntercept <= 0.5);
-    }
-
-    local r
-    for i, v in pairs(conditions) do
-        if v == true then
-            warn(i, v)
-            r = true
-        end
-    end
-
-    if r then return true end
-end
-
-function foreach(Ball)
-    local Ball = chooseNewFocusedBall()
-    if (Ball) and not Debounce then
-        for i, v in pairs(Signal) do table.remove(Signal, i); v:Disconnect() end
-        local function Calculation(Delta)
-            local Start, HumanoidRootPart, Player = os.clock(), Local.Character and Local.Character:FindFirstChild("HumanoidRootPart"), Players:FindFirstChild(Ball:GetAttribute("target"))
-            if (Ball and Ball:FindFirstChild("zoomies") and Ball:GetAttribute("target") == Local.Name) and HumanoidRootPart and not Debounce then
-                local timeToReachTarget = calculateProjectileTime(Ball.Position, HumanoidRootPart.Position, Ball.Velocity)
-                local distanceToTarget = calculateDistance(Ball.Position, HumanoidRootPart.Position)
-                local canParry = canObjectParry(Ball.Position, HumanoidRootPart.Position, Ball.Velocity, HumanoidRootPart.Velocity)
-
-                warn(timeToReachTarget, "Distance:", canParry)
-                if canParry then
-                    Parry()
-                    LastTime = nil
-                    Debounce = true
-                    local Signal = nil
-                    Signal = RunService.Stepped:Connect(function()
-                        warn("False:", Ball:GetAttribute("target"), os.clock()-Start, Ball, workspace.Dead:FindFirstChild(Local.Name))
-                        if Ball:GetAttribute("target") ~= Local.Name or os.clock()-Start >= 1.25 or not Ball or not workspace.Alive:FindFirstChild(Local.Name) then
-                            warn("Set to false")
-                            Debounce = false
-                            Signal:Disconnect()
-                        end
-                    end)
-                end
-            elseif (Ball and Ball:FindFirstChild("zoomies") and Ball:GetAttribute("target") ~= Local.Name) and HumanoidRootPart then
-                --local HumanoidRootPart = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                --local Distance = CalculateDistance(HumanoidRootPart, Delta)
-                LastPlayer = Player
-            end
-        end
-        Signal[#Signal+1] = RunService.Stepped:Connect(Calculation)
-    end
-end
 
 --Local.ChildAdded:Connect(Init)
